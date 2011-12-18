@@ -21,10 +21,10 @@ public class ALSVertexTest extends TestCase {
 
         double na = Double.NaN;
         Matrix ratings = new DenseMatrix(new double[][] {
-        new double[] { 5.0, 5.0, 2.0, na },
-        new double[] { 2.0, na,  3.0, 5.0 },
-        new double[] { na,  5.0, na,  3.0 },
-        new double[] { 3.0, na,  na,  5.0 } });
+                new double[] { 5.0, 5.0, 2.0, na },
+                new double[] { 2.0, na,  3.0, 5.0 },
+                new double[] { na,  5.0, na,  3.0 },
+                new double[] { 3.0, na,  na,  5.0 } });
 
         List<String> graph = Lists.newArrayList();
         for (int m = 0; m < ratings.numRows(); m++) {

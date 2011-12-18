@@ -12,6 +12,7 @@ import java.io.IOException;
 
 public class ALSOutputFormat
         extends TextVertexOutputFormat<RowOrColumn,FeatureVector,IntWritable> {
+    
     @Override
     public VertexWriter<RowOrColumn, FeatureVector, IntWritable>
             createVertexWriter(TaskAttemptContext context)
@@ -24,6 +25,8 @@ public class ALSOutputFormat
     public static class ALSVertexWriter extends
             TextVertexWriter<RowOrColumn,FeatureVector,IntWritable> {
 
+        private static final char SEP = '\t';
+        
         public ALSVertexWriter(RecordWriter<Text, Text> lineRecordWriter) {
             super(lineRecordWriter);
         }
@@ -32,13 +35,13 @@ public class ALSOutputFormat
         public void writeVertex(BasicVertex<RowOrColumn, FeatureVector,
                 IntWritable, ?> vertex) throws IOException,
                 InterruptedException {
-            String out = "";
-            out += vertex.getVertexId().isRow() ? "-" : "|";
-            out += "\t" + vertex.getVertexId().index();
+            StringBuilder out = new StringBuilder();
+            out.append(vertex.getVertexId().isRow() ? "-" : "|");
+            out.append(SEP).append(vertex.getVertexId().index());
             for (double value : vertex.getVertexValue().get()) {
-                out += "\t" + value;
+                out.append(SEP).append(value);
             }
-            getRecordWriter().write(new Text(out), null);
+            getRecordWriter().write(new Text(out.toString()), null);
         }
     }
 }

@@ -24,6 +24,7 @@ import com.google.common.io.Files;
 import org.apache.giraph.graph.GiraphJob;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.zookeeper.server.ServerConfig;
@@ -55,6 +56,13 @@ public class InternalVertexRunner {
     private InternalVertexRunner() {
     }
 
+    public static Iterable<String> run(Class<?> vertexClass,
+        Class<?> vertexInputFormatClass, Class<?> vertexOutputFormatClass,
+        Map<String,String> params, String... data) throws Exception {
+        return run(vertexClass, null, vertexInputFormatClass,
+                vertexOutputFormatClass, params, data);
+    }
+    
     /**
      *  Attempts to run the vertex internally in the current JVM, reading from and writing to a
      *  temporary folder on local disk. Will start an own zookeeper instance.
@@ -67,7 +75,8 @@ public class InternalVertexRunner {
      * @return linewise output data
      * @throws Exception
      */
-    public static Iterable<String> run(Class<?> vertexClass,
+    public static Iterable<String> run(Class<?> vertexClass, 
+            Class<?> combinerClass,
             Class<?> vertexInputFormatClass, Class<?> vertexOutputFormatClass,
             Map<String,String> params, String... data) throws Exception {
 
@@ -87,6 +96,9 @@ public class InternalVertexRunner {
             job.setVertexClass(vertexClass);
             job.setVertexInputFormatClass(vertexInputFormatClass);
             job.setVertexOutputFormatClass(vertexOutputFormatClass);
+            if (combinerClass != null) {
+                job.setVertexCombinerClass(combinerClass);
+            }
 
             job.setWorkerConfiguration(1, 1, 100.0f);
             Configuration conf = job.getConfiguration();

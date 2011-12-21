@@ -2,6 +2,17 @@ Giraph Change Log
 
 Release 0.70.0 - unreleased
 
+  GIRAPH-110: Add guide to setup the enviroment for running the
+  unittests in a pseudo-distributed hadoop instance. (ssc via aching)
+
+  GIRAPH-73: A little refactoring. (ssc via aching)
+
+  GIRAPH-106: Change prepareSuperstep() to make
+  setMessages(Iterable<M> messages) package-private. (aching)
+ 
+  GIRAPH-105: BspServiceMaster.checkWorkers() should return empty
+  lists instead of null. (ssc via aching)
+
   GIRAPH-80: Don't expose the list holding the messages in
   BasicVertex. (ssc via aching)
 

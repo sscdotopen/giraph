@@ -21,6 +21,7 @@ package org.apache.giraph.examples;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Collections;
 import java.util.Set;
 
 import org.apache.giraph.worker.WorkerContext;
@@ -106,15 +107,22 @@ public class RandomWalkWorkerContext extends WorkerContext {
    * @param configuration
    *          The configuration.
    */
-  private void initializeSources(Configuration configuration) {
+  private ImmutableSet<Long> initializeSources(Configuration configuration) {
     ImmutableSet.Builder<Long> builder = ImmutableSet.builder();
     long sourceVertex = configuration.getLong(SOURCE_VERTEX, Long.MIN_VALUE);
     if (sourceVertex != Long.MIN_VALUE) {
-      builder.add(sourceVertex);
+      return ImmutableSet.of(sourceVertex);
     } else {
       Path sourceFile = null;
       try {
-        sourceFile = DistributedCache.getLocalCacheFiles(configuration)[0];
+
+        Path[] cacheFiles = DistributedCache.getLocalCacheFiles(configuration);
+        if (cacheFiles == null || cacheFiles.length == 0) {
+          // empty set if no source vertices configured
+          return ImmutableSet.of();
+        }
+
+        sourceFile = cacheFiles[0];
         FileSystem fs = FileSystem.getLocal(configuration);
         BufferedReader in = new BufferedReader(new InputStreamReader(
             fs.open(sourceFile)));
@@ -124,19 +132,18 @@ public class RandomWalkWorkerContext extends WorkerContext {
         }
         in.close();
       } catch (IOException e) {
-        e.printStackTrace();
         getContext().setStatus(
             "Could not load local cache files: " + sourceFile);
-        LOG.error("Could not load local cache files: " + sourceFile);
+        LOG.error("Could not load local cache files: " + sourceFile, e);
       }
     }
-    SOURCES = builder.build();
+    return builder.build();
   }
 
   @Override
   public void preApplication() throws InstantiationException,
       IllegalAccessException {
-    Configuration configuration = this.getContext().getConfiguration();
+    Configuration configuration = getContext().getConfiguration();
     MAX_SUPERSTEPS = configuration.getInt(RandomWalkVertex.MAX_SUPERSTEPS,
         DEFAULT_MAX_SUPERSTEPS);
     TELEPORTATION_PROBABILITY = configuration.getFloat(

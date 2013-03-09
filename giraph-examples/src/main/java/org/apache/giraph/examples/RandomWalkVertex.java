@@ -42,16 +42,21 @@ public abstract class RandomWalkVertex
       .getName() + ".teleportationProbability";
   /** Name of aggregator for dangling nodes */
   static final String DANGLING = "dangling";
+  /** Name of aggregator for covergence detection */
+  static final String CONVERGENCE = "convergence";
   /** Logger */
   private static final Logger LOG = Logger.getLogger(RandomWalkVertex.class);
   /** State probability of the vertex */
   protected final DoubleWritable d = new DoubleWritable();
 
   /**
-   * Compute an initial probability distribution for the vertex.
+   * Compute an initial probability distribution for the vertex. Per default,
+   * we start with a uniform distribution.
    * @return The initial probability value.
    */
-  protected abstract double initialProbability();
+  protected double initialProbability() {
+    return 1.0 / getTotalNumVertices();
+  }
 
   /**
    * Perform a single step of a random walk computation.
@@ -63,12 +68,26 @@ public abstract class RandomWalkVertex
   protected abstract double recompute(Iterable<DoubleWritable> messages,
       double teleportationProbability);
 
+  /**
+   * Returns the cumulated probability from dangling nodes.
+   * @return The cumulated probability from dangling nodes.
+   */
+  protected double getDanglingProbability() {
+    return this.<DoubleWritable>getAggregatedValue(RandomWalkVertex.DANGLING)
+        .get();
+  }
+
   @Override
   public void compute(Iterable<DoubleWritable> messages) throws IOException {
     double stateProbability;
 
     if (getSuperstep() > 0) {
+      double previousStateProbability = getValue().get();
       stateProbability = recompute(messages, teleportationProbability());
+
+      d.set(Math.abs(stateProbability - previousStateProbability));
+      aggregate(CONVERGENCE, d);
+
     } else {
       stateProbability = initialProbability();
     }
@@ -116,20 +135,36 @@ public abstract class RandomWalkVertex
    */
   public static class RandomWalkVertexMasterCompute extends
       DefaultMasterCompute {
+
+    /** threshold for the L1 norm of the state vector difference  */
+    static final double CONVERGENCE_THRESHOLD = 0.00001;
+
     @Override
     public void compute() {
-      // TODO This is a good place to implement halting by checking convergence.
       double danglingContribution =
           this.<DoubleWritable>getAggregatedValue(RandomWalkVertex.DANGLING)
               .get();
+      double l1NormOfStateDiff =
+          this.<DoubleWritable>getAggregatedValue(RandomWalkVertex.CONVERGENCE)
+              .get();
       LOG.info("[Superstep " + getSuperstep() + "] Dangling contribution = " +
-          danglingContribution);
+          danglingContribution + ", L1 Norm of state vector difference = " +
+          l1NormOfStateDiff);
+
+      // Convergence check: halt once the l1 norm of the difference between the
+      // state vectors fall under the threshold
+      if (getSuperstep() > 1 && l1NormOfStateDiff < CONVERGENCE_THRESHOLD) {
+        haltComputation();
+      }
+
     }
 
     @Override
     public void initialize() throws InstantiationException,
         IllegalAccessException {
       registerAggregator(RandomWalkVertex.DANGLING, DoubleSumAggregator.class);
+      registerAggregator(RandomWalkVertex.CONVERGENCE,
+          DoubleSumAggregator.class);
     }
   }
 }

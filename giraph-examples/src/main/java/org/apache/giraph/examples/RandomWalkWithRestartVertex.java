@@ -18,6 +18,7 @@
 
 package org.apache.giraph.examples;
 
+import com.google.common.base.Preconditions;
 import org.apache.giraph.utils.MathUtils;
 import org.apache.hadoop.io.DoubleWritable;
 
@@ -42,34 +43,20 @@ public class RandomWalkWithRestartVertex extends RandomWalkVertex {
   }
 
   /**
-   * Returns the number of source vertexes.
-   * @return The number of source vertexes.
+   * Returns the number of source vertices.
+   * @return The number of source vertices.
    */
-  private int numSourceVertexes() {
+  private int numSourceVertices() {
     return ((RandomWalkWorkerContext) getWorkerContext()).numSources();
-  }
-
-  /**
-   * Returns the cumulated probability from dangling nodes.
-   * @return The cumulated probability from dangling nodes.
-   */
-  private double getDanglingProbability() {
-    return this.<DoubleWritable>getAggregatedValue(RandomWalkVertex.DANGLING)
-        .get();
-  }
-
-  /**
-   * Start with a uniform distribution.
-   * @return A uniform probability over all the vertexces.
-   */
-  @Override
-  protected double initialProbability() {
-    return 1.0 / getTotalNumVertices();
   }
 
   @Override
   protected double recompute(Iterable<DoubleWritable> transitionProbabilities,
       double teleportationProbability) {
+
+    int numSourceVertices = numSourceVertices();
+    Preconditions.checkState(numSourceVertices > 0, "No source vertex found");
+
     double stateProbability = MathUtils.sum(transitionProbabilities);
     // Add the contribution of dangling nodes (weakly preferential
     // implementation: dangling nodes redistribute uniformly)
@@ -77,7 +64,7 @@ public class RandomWalkWithRestartVertex extends RandomWalkVertex {
     // The random walk might teleport back to one of the source vertexes
     stateProbability *= 1 - teleportationProbability;
     if (isSourceVertex()) {
-      stateProbability += teleportationProbability / numSourceVertexes();
+      stateProbability += teleportationProbability / numSourceVertices;
     }
     return stateProbability;
   }

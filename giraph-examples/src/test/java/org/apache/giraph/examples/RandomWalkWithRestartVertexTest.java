@@ -66,15 +66,15 @@ public class RandomWalkWithRestartVertexTest {
     Iterable<String> results = InternalVertexRunner.run(classes, params, graph);
 
     Map<Long, Double> steadyStateProbabilities =
-        TestUtils.parseSteadyStateProbabilities(results);
+        RandomWalkUtils.parseSteadyStateProbabilities(results);
     // values computed with external software
     // 0.25, 0.354872, 0.09375, 0.301377
-    assertEquals(0.25, steadyStateProbabilities.get(12L), TestUtils.EPSILON);
+    assertEquals(0.25, steadyStateProbabilities.get(12L), RandomWalkUtils.EPSILON);
     assertEquals(0.354872, steadyStateProbabilities.get(34L),
-        TestUtils.EPSILON);
-    assertEquals(0.09375, steadyStateProbabilities.get(56L), TestUtils.EPSILON);
+        RandomWalkUtils.EPSILON);
+    assertEquals(0.09375, steadyStateProbabilities.get(56L), RandomWalkUtils.EPSILON);
     assertEquals(0.301377, steadyStateProbabilities.get(78L),
-        TestUtils.EPSILON);
+        RandomWalkUtils.EPSILON);
   }
 
   /**
@@ -107,17 +107,17 @@ public class RandomWalkWithRestartVertexTest {
     Iterable<String> results = InternalVertexRunner.run(classes, params, graph);
 
     Map<Long, Double> steadyStateProbabilities =
-        TestUtils.parseSteadyStateProbabilities(results);
+        RandomWalkUtils.parseSteadyStateProbabilities(results);
     // values computed with external software
     // 0.163365, 0.378932, 0.156886, 0.300816
     assertEquals(0.163365, steadyStateProbabilities.get(12L),
-        TestUtils.EPSILON);
+        RandomWalkUtils.EPSILON);
     assertEquals(0.378932, steadyStateProbabilities.get(34L),
-        TestUtils.EPSILON);
+        RandomWalkUtils.EPSILON);
     assertEquals(0.156886, steadyStateProbabilities.get(56L),
-        TestUtils.EPSILON);
+        RandomWalkUtils.EPSILON);
     assertEquals(0.300816, steadyStateProbabilities.get(78L),
-        TestUtils.EPSILON);
+        RandomWalkUtils.EPSILON);
   }
 
 

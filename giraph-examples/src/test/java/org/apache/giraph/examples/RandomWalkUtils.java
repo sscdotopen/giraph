@@ -22,7 +22,7 @@ import com.google.common.collect.Maps;
 
 import java.util.Map;
 
-public class TestUtils {
+public class RandomWalkUtils {
 
   /** Minimum difference between doubles */
   public static final double EPSILON = 10e-3;

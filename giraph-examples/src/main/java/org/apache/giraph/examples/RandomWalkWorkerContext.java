@@ -148,7 +148,7 @@ public class RandomWalkWorkerContext extends WorkerContext {
     TELEPORTATION_PROBABILITY = configuration.getFloat(
         RandomWalkVertex.TELEPORTATION_PROBABILITY,
         DEFAULT_TELEPORTATION_PROBABILITY);
-    initializeSources(configuration);
+    SOURCES = initializeSources(configuration);
   }
 
   @Override

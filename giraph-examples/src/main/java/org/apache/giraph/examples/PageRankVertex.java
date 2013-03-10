@@ -18,23 +18,35 @@
 
 package org.apache.giraph.examples;
 
+import org.apache.giraph.edge.Edge;
 import org.apache.giraph.utils.MathUtils;
 import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.NullWritable;
 
 /**
- * The PageRank algorithm
+ * The PageRank algorithm, with uniform transition probabilities on the edges
  * http://en.wikipedia.org/wiki/PageRank
  */
-public class PageRankVertex extends RandomWalkVertex {
+public class PageRankVertex extends RandomWalkVertex<NullWritable> {
+
+  @Override
+  protected double transitionProbability(double stateProbability,
+      Edge<LongWritable, NullWritable> edge) {
+    return stateProbability / getNumEdges();
+  }
 
   @Override
   protected double recompute(Iterable<DoubleWritable> partialRanks,
                              double teleportationProbability) {
 
+    // rank contribution from incident neighbors
     double rankFromNeighbors = MathUtils.sum(partialRanks);
+    // rank contribution from dangling vertices
     double danglingContribution =
         getDanglingProbability() / getTotalNumVertices();
 
+    // recompute rank
     double rank = (1d - teleportationProbability) *
         (rankFromNeighbors + danglingContribution) +
         teleportationProbability / getTotalNumVertices();

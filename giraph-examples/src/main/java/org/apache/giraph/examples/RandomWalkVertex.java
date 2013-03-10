@@ -24,16 +24,18 @@ import org.apache.giraph.edge.Edge;
 import org.apache.giraph.graph.Vertex;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Writable;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
 
 /**
- * Base class for executing a random walk on the graph
+ * Base class for executing a random walk on a graph
+ *
+ * @param <E> edge type
  */
-public abstract class RandomWalkVertex
-    extends Vertex<LongWritable, DoubleWritable, DoubleWritable,
-    DoubleWritable> {
+public abstract class RandomWalkVertex<E extends Writable>
+    extends Vertex<LongWritable, DoubleWritable, E, DoubleWritable> {
   /** Configuration parameter for the number of supersteps to execute */
   static final String MAX_SUPERSTEPS = RandomWalkVertex.class.getName() +
       ".maxSupersteps";
@@ -57,6 +59,15 @@ public abstract class RandomWalkVertex
   protected double initialProbability() {
     return 1.0 / getTotalNumVertices();
   }
+
+  /**
+   * Compute the probability of transitioning to a neighbor vertex
+   * @param stateProbability current steady state probability of the vertex
+   * @param edge edge to neighbor
+   * @return the probability of transitioning to a neighbor vertex
+   */
+  protected abstract double transitionProbability(double stateProbability,
+      Edge<LongWritable, E> edge);
 
   /**
    * Perform a single step of a random walk computation.
@@ -102,8 +113,9 @@ public abstract class RandomWalkVertex
     // Execute the algorithm as often as configured,
     // alternatively convergence could be checked via an Aggregator
     if (getSuperstep() < maxSupersteps()) {
-      for (Edge<LongWritable, DoubleWritable> edge : getEdges()) {
-        double transitionProbability = stateProbability * edge.getValue().get();
+      for (Edge<LongWritable, E> edge : getEdges()) {
+        double transitionProbability =
+            transitionProbability(stateProbability, edge);
         sendMessage(edge.getTargetVertexId(), new DoubleWritable(
             transitionProbability));
       }
@@ -151,7 +163,7 @@ public abstract class RandomWalkVertex
           danglingContribution + ", L1 Norm of state vector difference = " +
           l1NormOfStateDiff);
 
-      // Convergence check: halt once the l1 norm of the difference between the
+      // Convergence check: halt once the L1 norm of the difference between the
       // state vectors fall under the threshold
       if (getSuperstep() > 1 && l1NormOfStateDiff < CONVERGENCE_THRESHOLD) {
         haltComputation();

@@ -19,15 +19,18 @@
 package org.apache.giraph.examples;
 
 import com.google.common.base.Preconditions;
+import org.apache.giraph.edge.Edge;
 import org.apache.giraph.utils.MathUtils;
 import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.LongWritable;
 
 /**
  * Executes "RandomWalkWithRestart", a random walk on the graph which is biased
  * towards a source vertex. The resulting probabilities of staying at a given
  * vertex can be interpreted as a measure of proximity to the source vertex.
  */
-public class RandomWalkWithRestartVertex extends RandomWalkVertex {
+public class RandomWalkWithRestartVertex
+    extends RandomWalkVertex<DoubleWritable> {
 
   /** Configuration parameter for the source vertex */
   static final String SOURCE_VERTEX = RandomWalkWithRestartVertex.class
@@ -48,6 +51,12 @@ public class RandomWalkWithRestartVertex extends RandomWalkVertex {
    */
   private int numSourceVertices() {
     return ((RandomWalkWorkerContext) getWorkerContext()).numSources();
+  }
+
+  @Override
+  protected double transitionProbability(double stateProbability,
+      Edge<LongWritable, DoubleWritable> edge) {
+    return stateProbability * edge.getValue().get();
   }
 
   @Override

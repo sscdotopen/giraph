@@ -24,9 +24,12 @@ import org.apache.giraph.edge.ByteArrayEdges;
 import org.apache.giraph.utils.InternalVertexRunner;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.junit.Test;
 
 import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
 
 
 /**
@@ -50,18 +53,19 @@ public class PageRankVertexTest {
     };
 
     Map<String, String> params = Maps.newHashMap();
-    params.put(RandomWalkWithRestartVertex.MAX_SUPERSTEPS, "50");
-    params.put(RandomWalkWithRestartVertex.TELEPORTATION_PROBABILITY, "0.15");
+    params.put(RandomWalkWithRestartVertex.MAX_SUPERSTEPS, String.valueOf(50));
+    params.put(RandomWalkWithRestartVertex.TELEPORTATION_PROBABILITY,
+        String.valueOf(0.15));
 
-    GiraphClasses<LongWritable, DoubleWritable, DoubleWritable, DoubleWritable>
+    GiraphClasses<LongWritable, DoubleWritable, NullWritable, DoubleWritable>
         classes = new GiraphClasses<LongWritable, DoubleWritable,
-                DoubleWritable, DoubleWritable>();
+                NullWritable, DoubleWritable>();
     classes.setVertexClass(PageRankVertex.class);
     classes.setVertexEdgesClass(ByteArrayEdges.class);
     classes.setVertexInputFormatClass(
-        LongDoubleDoubleDoubleTextInputFormat.class);
+        LongDoubleNullDoubleTextInputFormat.class);
     classes.setVertexOutputFormatClass(
-        VertexWithDoubleValueDoubleEdgeTextOutputFormat.class);
+        VertexWithDoubleValueNullEdgeTextOutputFormat.class);
     classes.setWorkerContextClass(RandomWalkWorkerContext.class);
     classes.setMasterComputeClass(
         RandomWalkVertex.RandomWalkVertexMasterCompute.class);
@@ -70,12 +74,16 @@ public class PageRankVertexTest {
 
     Map<Long, Double> steadyStateProbabilities =
         TestUtils.parseSteadyStateProbabilities(results);
-/*
-    assertEquals(0.25, steadyStateProbabilities.get(12L), TestUtils.EPSILON);
-    assertEquals(0.354872, steadyStateProbabilities.get(34L),
+
+    assertEquals(0.28159076008518047, steadyStateProbabilities.get(1l),
         TestUtils.EPSILON);
-    assertEquals(0.09375, steadyStateProbabilities.get(56L), TestUtils.EPSILON);
-    assertEquals(0.301377, steadyStateProbabilities.get(78L),
-        TestUtils.EPSILON);                      */
+    assertEquals(0.2514648601529863, steadyStateProbabilities.get(2l),
+        TestUtils.EPSILON);
+    assertEquals(0.22262961972286327, steadyStateProbabilities.get(3l),
+        TestUtils.EPSILON);
+    assertEquals(0.17646783276703806, steadyStateProbabilities.get(4l),
+        TestUtils.EPSILON);
+    assertEquals(0.06784692727193153, steadyStateProbabilities.get(5l),
+        TestUtils.EPSILON);
   }
 }

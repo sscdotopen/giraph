@@ -21,7 +21,6 @@ package org.apache.giraph.examples;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Collections;
 import java.util.Set;
 
 import org.apache.giraph.worker.WorkerContext;
@@ -104,8 +103,8 @@ public class RandomWalkWorkerContext extends WorkerContext {
    * Second option is a file with a list of vertex IDs, one per line. In this
    * second case the preference vector is a uniform distribution over these
    * vertexes.
-   * @param configuration
-   *          The configuration.
+   * @param configuration The configuration.
+   * @return a (possibly empty) set of source vertices
    */
   private ImmutableSet<Long> initializeSources(Configuration configuration) {
     ImmutableSet.Builder<Long> builder = ImmutableSet.builder();

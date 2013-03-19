@@ -16,41 +16,33 @@
  * limitations under the License.
  */
 
-package org.apache.giraph.hive.input.edge;
+package org.apache.giraph.conf;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 
-import com.facebook.giraph.hive.HiveReadableRecord;
-
 /**
- * An interface used to create edges from Hive records.
+ * Default implementation of ImmutableClassesGiraphConfigurable
  *
- * @param <I> Vertex ID
- * @param <E> Edge Value
+ * @param <I> Vertex id
+ * @param <V> Vertex data
+ * @param <E> Edge data
+ * @param <M> Message data
  */
-public interface HiveToEdge<I extends WritableComparable, E extends Writable> {
-  /**
-   * Read source vertex ID from Hive record
-   *
-   * @param hiveRecord HiveRecord to read from
-   * @return source vertex ID
-   */
-  I getSourceVertexId(HiveReadableRecord hiveRecord);
+public class DefaultImmutableClassesGiraphConfigurable<
+    I extends WritableComparable, V extends Writable,
+    E extends Writable, M extends Writable> implements
+    ImmutableClassesGiraphConfigurable<I, V, E, M> {
+  /** Configuration */
+  private ImmutableClassesGiraphConfiguration<I, V, E, M> conf;
 
-  /**
-   * Read target vertex ID from Hive record
-   *
-   * @param hiveRecord HiveRecord to read from
-   * @return target vertex ID
-   */
-  I getTargetVertexId(HiveReadableRecord hiveRecord);
+  @Override
+  public void setConf(ImmutableClassesGiraphConfiguration<I, V, E, M> conf) {
+    this.conf = conf;
+  }
 
-  /**
-   * Read edge value from the Hive record.
-   *
-   * @param hiveRecord HiveRecord to read from
-   * @return Edge value
-   */
-  E getEdgeValue(HiveReadableRecord hiveRecord);
+  @Override
+  public ImmutableClassesGiraphConfiguration<I, V, E, M> getConf() {
+    return conf;
+  }
 }

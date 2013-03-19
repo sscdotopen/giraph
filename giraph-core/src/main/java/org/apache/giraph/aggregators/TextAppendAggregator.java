@@ -16,28 +16,22 @@
  * limitations under the License.
  */
 
-package org.apache.giraph.hive.output;
+package org.apache.giraph.aggregators;
 
-import org.apache.giraph.graph.Vertex;
-import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.io.WritableComparable;
-
-import com.facebook.giraph.hive.HiveWritableRecord;
+import org.apache.hadoop.io.Text;
 
 /**
- * Interface for writing vertices to a Hive record.
- *
- * @param <I> Vertex ID
- * @param <V> Vertex Value
- * @param <E> Edge Value
+ * Aggregator with {@link Text} as its value which keeps appending text to it
  */
-public interface VertexToHive<I extends WritableComparable, V extends Writable,
-    E extends Writable> {
-  /**
-   * Fill the HiveRecord from the Vertex given.
-   *
-   * @param vertex Vertex to read from.
-   * @param record HiveRecord to write to.
-   */
-  void fillRecord(Vertex<I, V, E, ?> vertex, HiveWritableRecord record);
+public class TextAppendAggregator extends BasicAggregator<Text> {
+  @Override
+  public void aggregate(Text value) {
+    byte[] valueBytes = value.getBytes();
+    getAggregatedValue().append(valueBytes, 0, valueBytes.length);
+  }
+
+  @Override
+  public Text createInitialValue() {
+    return new Text();
+  }
 }

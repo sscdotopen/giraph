@@ -73,17 +73,17 @@ public class PageRankVertexTest {
     Iterable<String> results = InternalVertexRunner.run(classes, params, graph);
 
     Map<Long, Double> steadyStateProbabilities =
-        RandomWalkUtils.parseSteadyStateProbabilities(results);
+        RandomWalkTestUtils.parseSteadyStateProbabilities(results);
 
     assertEquals(0.28159076008518047, steadyStateProbabilities.get(1l),
-        RandomWalkUtils.EPSILON);
+        RandomWalkTestUtils.EPSILON);
     assertEquals(0.2514648601529863, steadyStateProbabilities.get(2l),
-        RandomWalkUtils.EPSILON);
+        RandomWalkTestUtils.EPSILON);
     assertEquals(0.22262961972286327, steadyStateProbabilities.get(3l),
-        RandomWalkUtils.EPSILON);
+        RandomWalkTestUtils.EPSILON);
     assertEquals(0.17646783276703806, steadyStateProbabilities.get(4l),
-        RandomWalkUtils.EPSILON);
+        RandomWalkTestUtils.EPSILON);
     assertEquals(0.06784692727193153, steadyStateProbabilities.get(5l),
-        RandomWalkUtils.EPSILON);
+        RandomWalkTestUtils.EPSILON);
   }
 }

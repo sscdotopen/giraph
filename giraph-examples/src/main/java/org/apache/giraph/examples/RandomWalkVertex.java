@@ -42,17 +42,20 @@ public abstract class RandomWalkVertex<E extends Writable>
   /** Configuration parameter for the teleportation probability */
   static final String TELEPORTATION_PROBABILITY = RandomWalkVertex.class
       .getName() + ".teleportationProbability";
-  /** Name of aggregator for dangling nodes */
-  static final String DANGLING = "dangling";
-  /** Name of aggregator for covergence detection */
-  static final String CONVERGENCE = "convergence";
+  /** Name of aggregator for collecting the probability of dangling vertices */
+  static final String CUMULATIVE_DANGLING_PROBABILITY = RandomWalkVertex.class
+      .getName() + ".cumulativeDanglingProbability";
+  /** Name of aggregator for the L1 norm of the probability difference, used
+   * for covergence detection */
+  static final String L1_NORM_OF_PROBABILITY_DIFFERENCE = RandomWalkVertex.class
+      .getName() + ".l1NormOfProbabilityDifference";
   /** Logger */
   private static final Logger LOG = Logger.getLogger(RandomWalkVertex.class);
-  /** State probability of the vertex */
-  protected final DoubleWritable d = new DoubleWritable();
+  /** Reusable {@link DoubleWritable} instance to avoid object instantiation */
+  private final DoubleWritable doubleWritable = new DoubleWritable();
 
   /**
-   * Compute an initial probability distribution for the vertex. Per default,
+   * Compute an initial probability value for the vertex. Per default,
    * we start with a uniform distribution.
    * @return The initial probability value.
    */
@@ -80,12 +83,12 @@ public abstract class RandomWalkVertex<E extends Writable>
       double teleportationProbability);
 
   /**
-   * Returns the cumulated probability from dangling nodes.
-   * @return The cumulated probability from dangling nodes.
+   * Returns the cumulative probability from dangling nodes.
+   * @return The cumulative probability from dangling nodes.
    */
   protected double getDanglingProbability() {
-    return this.<DoubleWritable>getAggregatedValue(RandomWalkVertex.DANGLING)
-        .get();
+    return this.<DoubleWritable>getAggregatedValue(
+        RandomWalkVertex.CUMULATIVE_DANGLING_PROBABILITY).get();
   }
 
   @Override
@@ -96,28 +99,26 @@ public abstract class RandomWalkVertex<E extends Writable>
       double previousStateProbability = getValue().get();
       stateProbability = recompute(messages, teleportationProbability());
 
-      d.set(Math.abs(stateProbability - previousStateProbability));
-      aggregate(CONVERGENCE, d);
+      doubleWritable.set(Math.abs(stateProbability - previousStateProbability));
+      aggregate(L1_NORM_OF_PROBABILITY_DIFFERENCE, doubleWritable);
 
     } else {
       stateProbability = initialProbability();
     }
-    d.set(stateProbability);
-    setValue(d);
+    doubleWritable.set(stateProbability);
+    setValue(doubleWritable);
 
     // Compute dangling node contribution for next superstep
     if (getNumEdges() == 0) {
-      aggregate(DANGLING, d);
+      aggregate(CUMULATIVE_DANGLING_PROBABILITY, doubleWritable);
     }
 
-    // Execute the algorithm as often as configured,
-    // alternatively convergence could be checked via an Aggregator
     if (getSuperstep() < maxSupersteps()) {
       for (Edge<LongWritable, E> edge : getEdges()) {
         double transitionProbability =
             transitionProbability(stateProbability, edge);
-        sendMessage(edge.getTargetVertexId(), new DoubleWritable(
-            transitionProbability));
+        doubleWritable.set(transitionProbability);
+        sendMessage(edge.getTargetVertexId(), doubleWritable);
       }
     } else {
       voteToHalt();
@@ -154,11 +155,12 @@ public abstract class RandomWalkVertex<E extends Writable>
     @Override
     public void compute() {
       double danglingContribution =
-          this.<DoubleWritable>getAggregatedValue(RandomWalkVertex.DANGLING)
-              .get();
+          this.<DoubleWritable>getAggregatedValue(
+          RandomWalkVertex.CUMULATIVE_DANGLING_PROBABILITY).get();
       double l1NormOfStateDiff =
-          this.<DoubleWritable>getAggregatedValue(RandomWalkVertex.CONVERGENCE)
-              .get();
+          this.<DoubleWritable>getAggregatedValue(
+          RandomWalkVertex.L1_NORM_OF_PROBABILITY_DIFFERENCE).get();
+
       LOG.info("[Superstep " + getSuperstep() + "] Dangling contribution = " +
           danglingContribution + ", L1 Norm of state vector difference = " +
           l1NormOfStateDiff);
@@ -174,8 +176,9 @@ public abstract class RandomWalkVertex<E extends Writable>
     @Override
     public void initialize() throws InstantiationException,
         IllegalAccessException {
-      registerAggregator(RandomWalkVertex.DANGLING, DoubleSumAggregator.class);
-      registerAggregator(RandomWalkVertex.CONVERGENCE,
+      registerAggregator(RandomWalkVertex.CUMULATIVE_DANGLING_PROBABILITY,
+          DoubleSumAggregator.class);
+      registerAggregator(RandomWalkVertex.L1_NORM_OF_PROBABILITY_DIFFERENCE,
           DoubleSumAggregator.class);
     }
   }

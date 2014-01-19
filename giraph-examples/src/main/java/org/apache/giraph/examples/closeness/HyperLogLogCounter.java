@@ -1,3 +1,21 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.apache.giraph.examples.closeness;
 
 import java.io.DataInput;
@@ -13,6 +31,7 @@ public class HyperLogLogCounter implements Writable {
   private static final int NUMBER_OF_BUCKETS = 64;
   private static final double ALPHA_TIMES_MSQUARED =
       0.709 * NUMBER_OF_BUCKETS * NUMBER_OF_BUCKETS;
+  private static final double ESTIMATION_THRESHOLD = 2.5 * NUMBER_OF_BUCKETS;
   
   private byte[] buckets;
   
@@ -64,16 +83,16 @@ public class HyperLogLogCounter implements Writable {
   public long count() {
 
     double sum = 0.0;
-    for (int index = 0; index < buckets.length; index++) {
-      sum += Math.pow(2.0, -buckets[index]);
+    for (byte bucket : buckets) {
+      sum += Math.pow(2.0, -bucket);
     }
     long estimate = (long) (ALPHA_TIMES_MSQUARED * (1.0 / sum));
 
-    if (estimate < 2.5 * NUMBER_OF_BUCKETS) {
+    if (estimate < ESTIMATION_THRESHOLD) {
       /* look for empty buckets */
       int V = 0;
-      for (int index = 0; index < buckets.length; index++) {
-        if (buckets[index] == 0) {
+      for (byte bucket : buckets) {
+        if (bucket == 0) {
           V++;
         }
       }

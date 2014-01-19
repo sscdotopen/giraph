@@ -35,6 +35,7 @@ public class ClosenessEstimationTest {
     conf.setVertexInputFormatClass(ClosenessTextInputFormat.class);
     conf.setVertexOutputFormatClass(IdWithValueTextOutputFormat.class);
     conf.setDoOutputDuringComputation(true);
+    conf.enableOneToAllMsgSending();
 
     // run internally
     Iterable<String> results = InternalVertexRunner.run(conf, graph);

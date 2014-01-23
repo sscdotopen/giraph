@@ -16,23 +16,22 @@
  * limitations under the License.
  */
 
-package org.apache.giraph.examples.closeness;
+package org.apache.giraph.examples.hyperball;
 
 import org.apache.giraph.combiner.MessageCombiner;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.WritableComparable;
 
-public class HyperLogLogCounterMessageCombiner
-  extends MessageCombiner<IntWritable, HyperLogLogCounter> {
+abstract class HyperLogLogCombiner<I extends WritableComparable>
+    extends MessageCombiner<I, HyperLogLog> {
 
   @Override
-  public void combine(IntWritable vertexIndex,
-                      HyperLogLogCounter originalMessage,
-                      HyperLogLogCounter messageToCombine) {
-    originalMessage.merge(messageToCombine);
+  public void combine(I id, HyperLogLog left, HyperLogLog right) {
+    left.merge(right);
   }
 
   @Override
-  public HyperLogLogCounter createInitialMessage() {
-    return new HyperLogLogCounter();
+  public HyperLogLog createInitialMessage() {
+    return new HyperLogLog();
   }
 }

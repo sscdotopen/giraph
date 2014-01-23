@@ -16,42 +16,43 @@
  * limitations under the License.
  */
 
-package org.apache.giraph.examples.closeness;
+package org.apache.giraph.examples.hyperball;
 
 import org.apache.giraph.graph.BasicComputation;
 import org.apache.giraph.graph.Vertex;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.WritableComparable;
 
 import java.io.IOException;
 
-public class ClosenessEstimation extends BasicComputation<IntWritable,
-    ClosenessState, NullWritable, HyperLogLogCounter> {
+abstract class HyperBall<I extends WritableComparable> extends
+    BasicComputation<I, ReachableVertices, NullWritable, HyperLogLog> {
+
+  abstract void initializeCounter(I vertexID, HyperLogLog counter);
 
   @Override
-  public void compute(
-      Vertex<IntWritable, ClosenessState, NullWritable> vertex,
-      Iterable<HyperLogLogCounter> neighborCounters) throws IOException {
+  public void compute(Vertex<I, ReachableVertices, NullWritable> vertex,
+      Iterable<HyperLogLog> neighborCounters) throws IOException {
 
-    HyperLogLogCounter counter = vertex.getValue().counter();
+    HyperLogLog counter = vertex.getValue().counter();
 
     if (getSuperstep() == 0L) {
 
-      counter.observe(vertex.getId().get());
+      initializeCounter(vertex.getId(), counter);
       sendMessageToAllEdges(vertex, counter);
 
     } else {
 
       long numSeenBefore = counter.count();
 
-      for (HyperLogLogCounter neighborCounter : neighborCounters) {
+      for (HyperLogLog neighborCounter : neighborCounters) {
         counter.merge(neighborCounter);
       }
 
       long numNewlySeen = counter.count() - numSeenBefore;
 
       if (numNewlySeen > 0) {
-        vertex.getValue().setHops((int) getSuperstep());
+        vertex.getValue().updateHops((int) getSuperstep());
         sendMessageToAllEdges(vertex, counter);
       }
     }

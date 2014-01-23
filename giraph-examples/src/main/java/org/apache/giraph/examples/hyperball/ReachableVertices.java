@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.giraph.examples.closeness;
+package org.apache.giraph.examples.hyperball;
 
 import org.apache.hadoop.io.Writable;
 
@@ -24,20 +24,20 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class ClosenessState implements Writable {
+public class ReachableVertices implements Writable {
 
   private int hops;
-  private HyperLogLogCounter counter;
+  private HyperLogLog counter;
 
-  public ClosenessState() {
-    counter = new HyperLogLogCounter();
+  public ReachableVertices() {
+    counter = new HyperLogLog();
   }
 
-  public HyperLogLogCounter counter() {
+  public HyperLogLog counter() {
     return counter;
   }
 
-  public void setHops(int hops) {
+  public void updateHops(int hops) {
     this.hops = hops;
   }
 

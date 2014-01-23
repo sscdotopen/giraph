@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.giraph.examples.closeness;
+package org.apache.giraph.examples.hyperball;
 
 
 import com.google.common.collect.Lists;
@@ -33,30 +33,29 @@ import java.io.IOException;
 import java.util.List;
 import java.util.regex.Pattern;
 
-public class ClosenessTextInputFormat extends
-  TextVertexInputFormat<IntWritable, ClosenessState, NullWritable> {
+public class HyperBall32TextInputFormat extends
+  TextVertexInputFormat<IntWritable, ReachableVertices, NullWritable> {
 
   /** Separator of the vertex and neighbors */
   private static final Pattern SEPARATOR = Pattern.compile("[\t ]");
 
   @Override
   public TextVertexInputFormat.TextVertexReader createVertexReader(
-      InputSplit split,
-      TaskAttemptContext context) throws IOException {
-    return new ClosenessVertexReader();
+      InputSplit split, TaskAttemptContext context) throws IOException {
+    return new NeighborhoodFunctionEstimationVertexReader();
   }
 
-  /** vertex reader associated with {@link ClosenessTextInputFormat} */
-  public class ClosenessVertexReader extends
+  /** associated vertex reader */
+  public class NeighborhoodFunctionEstimationVertexReader extends
       TextVertexReaderFromEachLineProcessed<String[]> {
 
     /** Cached vertex id for the current line */
-    private IntWritable id;
+    private IntWritable id = new IntWritable();
 
     @Override
     protected String[] preprocessLine(Text line) throws IOException {
       String[] tokens = SEPARATOR.split(line.toString());
-      id = new IntWritable(Integer.parseInt(tokens[0]));
+      id.set(Integer.parseInt(tokens[0]));
       return tokens;
     }
 
@@ -66,8 +65,8 @@ public class ClosenessTextInputFormat extends
     }
 
     @Override
-    protected ClosenessState getValue(String[] tokens) throws IOException {
-      return new ClosenessState();
+    protected ReachableVertices getValue(String[] tokens) throws IOException {
+      return new ReachableVertices();
     }
 
     @Override

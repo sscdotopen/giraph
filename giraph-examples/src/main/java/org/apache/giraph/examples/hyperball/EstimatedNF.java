@@ -18,18 +18,20 @@
 
 package org.apache.giraph.examples.hyperball;
 
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 import org.apache.hadoop.io.Writable;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class ReachableVertices implements Writable {
+public class EstimatedNF implements Writable {
 
-  private int hops;
   private HyperLogLog counter;
 
-  public ReachableVertices() {
+  private IntArrayList nf = new IntArrayList();
+
+  public EstimatedNF() {
     counter = new HyperLogLog();
   }
 
@@ -37,24 +39,45 @@ public class ReachableVertices implements Writable {
     return counter;
   }
 
-  public void updateHops(int hops) {
-    this.hops = hops;
+  public void registerEstimate(int hops, int numReachableVertices) {
+    nf.add(hops);
+    nf.add(numReachableVertices);
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
-    out.writeInt(hops);
+
     counter.write(out);
+
+    int size = nf.size();
+    out.writeInt(size);
+    for (int n = 0; n < size; n++) {
+      out.writeInt(nf.getInt(n));
+    }
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    hops = in.readInt();
     counter.readFields(in);
+    int size = in.readInt();
+    int[] elems = new int[size];
+    for (int n = 0; n < size; n++) {
+      elems[n] = in.readInt();
+    }
+    nf = new IntArrayList(elems);
   }
 
   @Override
   public String toString() {
-    return hops + "\t" + counter.count();
+    StringBuilder buffer = new StringBuilder();
+    int n = 0;
+    int size = nf.size();
+    while (n < size) {
+      int hop = nf.getInt(n++);
+      int numReachableVertices = nf.getInt(n++);
+      buffer.append(hop).append(":")
+            .append(numReachableVertices).append(";");
+    }
+    return buffer.toString();
   }
 }

@@ -45,10 +45,6 @@ public class HyperLogLog implements Writable {
     setRegister(MurmurHash3.hash(item, SEED));
   }
 
-  public void observe(long item) {
-    setRegister(MurmurHash3.hash(item, SEED));
-  }
-
   private void setRegister(int hash) {
     // last 4 bits as bucket index
     int mask = NUMBER_OF_BUCKETS - 1;

@@ -20,25 +20,24 @@ package org.apache.giraph.examples.hyperball;
 
 import org.apache.giraph.graph.BasicComputation;
 import org.apache.giraph.graph.Vertex;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.NullWritable;
-import org.apache.hadoop.io.WritableComparable;
 
 import java.io.IOException;
 
-abstract class HyperBall<I extends WritableComparable> extends
-    BasicComputation<I, ReachableVertices, NullWritable, HyperLogLog> {
-
-  abstract void initializeCounter(I vertexID, HyperLogLog counter);
+public class HyperBall extends BasicComputation<IntWritable, EstimatedNF,
+    NullWritable, HyperLogLog> {
 
   @Override
-  public void compute(Vertex<I, ReachableVertices, NullWritable> vertex,
+  public void compute(
+      Vertex<IntWritable, EstimatedNF, NullWritable> vertex,
       Iterable<HyperLogLog> neighborCounters) throws IOException {
 
     HyperLogLog counter = vertex.getValue().counter();
 
     if (getSuperstep() == 0L) {
 
-      initializeCounter(vertex.getId(), counter);
+      counter.observe(vertex.getId().get());
       sendMessageToAllEdges(vertex, counter);
 
     } else {
@@ -49,10 +48,11 @@ abstract class HyperBall<I extends WritableComparable> extends
         counter.merge(neighborCounter);
       }
 
-      long numNewlySeen = counter.count() - numSeenBefore;
+      long numSeenNow = counter.count();
 
-      if (numNewlySeen > 0) {
-        vertex.getValue().updateHops((int) getSuperstep());
+      if (numSeenNow > numSeenBefore) {
+        vertex.getValue().registerEstimate((int) getSuperstep(),
+            (int) numSeenNow);
         sendMessageToAllEdges(vertex, counter);
       }
     }

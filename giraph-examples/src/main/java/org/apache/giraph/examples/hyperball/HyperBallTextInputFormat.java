@@ -33,8 +33,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.regex.Pattern;
 
-public class HyperBall32TextInputFormat extends
-  TextVertexInputFormat<IntWritable, ReachableVertices, NullWritable> {
+public class HyperBallTextInputFormat extends
+  TextVertexInputFormat<IntWritable, EstimatedNF, NullWritable> {
 
   /** Separator of the vertex and neighbors */
   private static final Pattern SEPARATOR = Pattern.compile("[\t ]");
@@ -65,8 +65,8 @@ public class HyperBall32TextInputFormat extends
     }
 
     @Override
-    protected ReachableVertices getValue(String[] tokens) throws IOException {
-      return new ReachableVertices();
+    protected EstimatedNF getValue(String[] tokens) throws IOException {
+      return new EstimatedNF();
     }
 
     @Override

@@ -20,17 +20,17 @@ package org.apache.giraph.examples.hyperball;
 
 import org.apache.giraph.graph.BasicComputation;
 import org.apache.giraph.graph.Vertex;
-import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 
 import java.io.IOException;
 
-public class HyperBall extends BasicComputation<IntWritable, EstimatedNF,
+public class HyperBall extends BasicComputation<LongWritable, EstimatedNF,
     NullWritable, HyperLogLog> {
 
   @Override
   public void compute(
-      Vertex<IntWritable, EstimatedNF, NullWritable> vertex,
+      Vertex<LongWritable, EstimatedNF, NullWritable> vertex,
       Iterable<HyperLogLog> neighborCounters) throws IOException {
 
     HyperLogLog counter = vertex.getValue().counter();
@@ -51,8 +51,7 @@ public class HyperBall extends BasicComputation<IntWritable, EstimatedNF,
       long numSeenNow = counter.count();
 
       if (numSeenNow > numSeenBefore) {
-        vertex.getValue().registerEstimate((int) getSuperstep(),
-            (int) numSeenNow);
+        vertex.getValue().registerEstimate((byte) getSuperstep(), numSeenNow);
         sendMessageToAllEdges(vertex, counter);
       }
     }

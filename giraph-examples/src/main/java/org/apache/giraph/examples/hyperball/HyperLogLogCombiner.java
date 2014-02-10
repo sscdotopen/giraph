@@ -19,13 +19,13 @@
 package org.apache.giraph.examples.hyperball;
 
 import org.apache.giraph.combiner.MessageCombiner;
-import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
 
 public class HyperLogLogCombiner
-    extends MessageCombiner<IntWritable, HyperLogLog> {
+    extends MessageCombiner<LongWritable, HyperLogLog> {
 
   @Override
-  public void combine(IntWritable id, HyperLogLog left, HyperLogLog right) {
+  public void combine(LongWritable id, HyperLogLog left, HyperLogLog right) {
     left.merge(right);
   }
 

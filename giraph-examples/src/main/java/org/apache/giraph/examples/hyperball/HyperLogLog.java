@@ -41,7 +41,7 @@ public class HyperLogLog implements Writable {
     buckets = new byte[NUMBER_OF_BUCKETS];
   }
 
-  public void observe(int item) {
+  public void observe(long item) {
     setRegister(MurmurHash3.hash(item, SEED));
   }
 

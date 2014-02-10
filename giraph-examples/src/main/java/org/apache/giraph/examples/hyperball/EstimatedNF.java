@@ -18,7 +18,8 @@
 
 package org.apache.giraph.examples.hyperball;
 
-import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.bytes.ByteArrayList;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
 import org.apache.hadoop.io.Writable;
 
 import java.io.DataInput;
@@ -29,7 +30,8 @@ public class EstimatedNF implements Writable {
 
   private HyperLogLog counter;
 
-  private IntArrayList nf = new IntArrayList();
+  private ByteArrayList hops = new ByteArrayList();
+  private LongArrayList nf = new LongArrayList();
 
   public EstimatedNF() {
     counter = new HyperLogLog();
@@ -39,8 +41,8 @@ public class EstimatedNF implements Writable {
     return counter;
   }
 
-  public void registerEstimate(int hops, int numReachableVertices) {
-    nf.add(hops);
+  public void registerEstimate(byte hop, long numReachableVertices) {
+    hops.add(hop);
     nf.add(numReachableVertices);
   }
 
@@ -52,7 +54,8 @@ public class EstimatedNF implements Writable {
     int size = nf.size();
     out.writeInt(size);
     for (int n = 0; n < size; n++) {
-      out.writeInt(nf.getInt(n));
+      out.writeByte(hops.getByte(n));
+      out.writeLong(nf.getLong(n));
     }
   }
 
@@ -60,23 +63,26 @@ public class EstimatedNF implements Writable {
   public void readFields(DataInput in) throws IOException {
     counter.readFields(in);
     int size = in.readInt();
-    int[] elems = new int[size];
+    byte[] hopElems = new byte[size];
+    long[] nfElems = new long[size];
     for (int n = 0; n < size; n++) {
-      elems[n] = in.readInt();
+      hopElems[n] = in.readByte();
+      nfElems[n] = in.readLong();
     }
-    nf = new IntArrayList(elems);
+    hops = new ByteArrayList(hopElems);
+    nf = new LongArrayList(nfElems);
   }
 
   @Override
   public String toString() {
     StringBuilder buffer = new StringBuilder();
-    int n = 0;
     int size = nf.size();
-    while (n < size) {
-      int hop = nf.getInt(n++);
-      int numReachableVertices = nf.getInt(n++);
+    for (int n = 0; n < size; n++) {
+      byte hop = hops.getByte(n);
+      long numReachableVertices = nf.getLong(n);
       buffer.append(hop).append(":")
             .append(numReachableVertices).append(";");
+      n++;
     }
     return buffer.toString();
   }

@@ -685,6 +685,10 @@ public class DiskBackedPartitionStore<I extends WritableComparable,
     public Partition<I, V, E> call() throws Exception {
       Partition<I, V, E> partition = null;
 
+      if (!partitionIds.contains(id)) {
+        return partition;
+      }
+
       while (partition == null) {
         wLock.lock();
         try {

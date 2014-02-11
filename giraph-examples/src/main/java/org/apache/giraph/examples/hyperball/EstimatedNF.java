@@ -20,6 +20,7 @@ package org.apache.giraph.examples.hyperball;
 
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
+import org.apache.giraph.comm.messages.HyperLogLog;
 import org.apache.hadoop.io.Writable;
 
 import java.io.DataInput;

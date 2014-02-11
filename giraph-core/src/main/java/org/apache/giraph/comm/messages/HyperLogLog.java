@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.giraph.examples.hyperball;
+package org.apache.giraph.comm.messages;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -25,7 +25,7 @@ import java.io.IOException;
 import org.apache.hadoop.io.Writable;
 
 /** a HyperLogLog sketch. */
-public class HyperLogLog implements Writable {
+public class HyperLogLog implements Writable, Cloneable {
 
   private static final int NUMBER_OF_BUCKETS = 16;
   private static final double ALPHA_TIMES_MSQUARED =
@@ -38,8 +38,13 @@ public class HyperLogLog implements Writable {
   private byte[] buckets;
   
   public HyperLogLog() {
-    buckets = new byte[NUMBER_OF_BUCKETS];
+    this(new byte[NUMBER_OF_BUCKETS]);
   }
+
+  public HyperLogLog(byte[] buckets) {
+    this.buckets = buckets;
+  }
+
 
   public void observe(long item) {
     setRegister(MurmurHash3.hash(item, SEED));
@@ -101,6 +106,13 @@ public class HyperLogLog implements Writable {
   @Override
   public void readFields(DataInput in) throws IOException {
     in.readFully(buckets);
+  }
+
+  @Override
+  protected HyperLogLog clone() {
+    byte[] clonedBuckets = new byte[NUMBER_OF_BUCKETS];
+    System.arraycopy(buckets, 0, clonedBuckets, 0, buckets.length);
+    return new HyperLogLog(clonedBuckets);
   }
 
   @Override

@@ -18,31 +18,46 @@
 
 package org.apache.giraph.partition;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.giraph.conf.GiraphConfiguration;
-import org.apache.giraph.conf.GiraphConstants;
-import org.apache.giraph.conf.ImmutableClassesGiraphConfiguration;
-import org.apache.giraph.edge.EdgeFactory;
-import org.apache.giraph.graph.Vertex;
-import org.apache.giraph.utils.NoOpComputation;
-import org.apache.giraph.utils.UnsafeByteArrayInputStream;
-import org.apache.giraph.utils.UnsafeByteArrayOutputStream;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.NullWritable;
-import org.apache.hadoop.mapreduce.Mapper;
-import org.junit.Before;
-import org.junit.Test;
-
-import com.google.common.collect.Iterables;
-import com.google.common.io.Files;
-
-import java.io.File;
-import java.io.IOException;
-
+import static org.apache.giraph.conf.GiraphConstants.MAX_PARTITIONS_IN_MEMORY;
+import static org.apache.giraph.conf.GiraphConstants.USER_PARTITION_COUNT;
+import static org.apache.giraph.conf.GiraphConstants.USE_OUT_OF_CORE_GRAPH;
+import static org.apache.giraph.conf.GiraphConstants.PARTITIONS_DIRECTORY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Iterator;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.giraph.bsp.BspService;
+import org.apache.giraph.bsp.CentralizedServiceWorker;
+import org.apache.giraph.conf.GiraphConfiguration;
+import org.apache.giraph.conf.GiraphConstants;
+import org.apache.giraph.conf.ImmutableClassesGiraphConfiguration;
+import org.apache.giraph.edge.EdgeFactory;
+import org.apache.giraph.graph.BasicComputation;
+import org.apache.giraph.graph.Vertex;
+import org.apache.giraph.io.formats.IdWithValueTextOutputFormat;
+import org.apache.giraph.io.formats.JsonLongDoubleFloatDoubleVertexInputFormat;
+import org.apache.giraph.utils.InternalVertexRunner;
+import org.apache.giraph.utils.NoOpComputation;
+import org.apache.giraph.utils.UnsafeByteArrayInputStream;
+import org.apache.giraph.utils.UnsafeByteArrayOutputStream;
+import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.FloatWritable;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import com.google.common.collect.Iterables;
+import com.google.common.io.Files;
 
 /**
  * Test case for partition stores.
@@ -125,17 +140,24 @@ public class TestPartitionStores {
   }
   
   @Test
-  public void testDiskBackedPartitionStoreWithByteArrayPartition() throws IOException {
+  public void testDiskBackedPartitionStoreWithByteArrayPartition()
+    throws IOException {
+
     File directory = Files.createTempDir();
     GiraphConstants.PARTITIONS_DIRECTORY.set(
         conf, new File(directory, "giraph_partitions").toString());
     GiraphConstants.USE_OUT_OF_CORE_GRAPH.set(conf, true);
     GiraphConstants.MAX_PARTITIONS_IN_MEMORY.set(conf, 1);
     conf.setPartitionClass(ByteArrayPartition.class);
-    
+
+    CentralizedServiceWorker<IntWritable, IntWritable, NullWritable>
+      serviceWroker = Mockito.mock(CentralizedServiceWorker.class);
+    Mockito.when(serviceWroker.getSuperstep()).thenReturn(
+      BspService.INPUT_SUPERSTEP);
+
     PartitionStore<IntWritable, IntWritable, NullWritable> partitionStore =
         new DiskBackedPartitionStore<IntWritable, IntWritable, NullWritable>(
-            conf, context);
+            conf, context, serviceWroker);
     testReadWrite(partitionStore, conf);
     partitionStore.shutdown();
     FileUtils.deleteDirectory(directory);
@@ -149,17 +171,88 @@ public class TestPartitionStores {
     GiraphConstants.USE_OUT_OF_CORE_GRAPH.set(conf, true);
     GiraphConstants.MAX_PARTITIONS_IN_MEMORY.set(conf, 1);
 
+    CentralizedServiceWorker<IntWritable, IntWritable, NullWritable>
+    serviceWroker = Mockito.mock(CentralizedServiceWorker.class);
+
+    Mockito.when(serviceWroker.getSuperstep()).thenReturn(
+      BspService.INPUT_SUPERSTEP);
+
     PartitionStore<IntWritable, IntWritable, NullWritable> partitionStore =
         new DiskBackedPartitionStore<IntWritable, IntWritable, NullWritable>(
-            conf, context);
+            conf, context, serviceWroker);
     testReadWrite(partitionStore, conf);
     partitionStore.shutdown();
 
     GiraphConstants.MAX_PARTITIONS_IN_MEMORY.set(conf, 2);
     partitionStore = new DiskBackedPartitionStore<IntWritable,
-            IntWritable, NullWritable>(conf, context);
+            IntWritable, NullWritable>(conf, context, serviceWroker);
     testReadWrite(partitionStore, conf);
     partitionStore.shutdown();
+    FileUtils.deleteDirectory(directory);
+  }
+
+  @Test
+  public void testDiskBackedPartitionStoreWithByteArrayComputation()
+    throws Exception {
+
+    Iterable<String> results;
+    String[] graph =
+    {
+      "[1,0,[]]", "[2,0,[]]", "[3,0,[]]", "[4,0,[]]", "[5,0,[]]",
+      "[6,0,[]]", "[7,0,[]]", "[8,0,[]]", "[9,0,[]]", "[10,0,[]]"
+    };
+    String[] expected =
+    {
+      "1\t0", "2\t0", "3\t0", "4\t0", "5\t0",
+      "6\t0", "7\t0", "8\t0", "9\t0", "10\t0"
+    };
+
+    USE_OUT_OF_CORE_GRAPH.set(conf, true);
+    MAX_PARTITIONS_IN_MEMORY.set(conf, 1);
+    USER_PARTITION_COUNT.set(conf, 10);
+
+    File directory = Files.createTempDir();
+    PARTITIONS_DIRECTORY.set(conf,
+      new File(directory, "giraph_partitions").toString());
+
+    conf.setPartitionClass(ByteArrayPartition.class);
+    conf.setComputationClass(EmptyComputation.class);
+    conf.setVertexInputFormatClass(JsonLongDoubleFloatDoubleVertexInputFormat.class);
+    conf.setVertexOutputFormatClass(IdWithValueTextOutputFormat.class);
+
+    results = InternalVertexRunner.run(conf, graph);
+    checkResults(results, expected);
+    FileUtils.deleteDirectory(directory);
+  }
+
+  @Test
+  public void testDiskBackedPartitionStoreComputation() throws Exception {
+    Iterable<String> results;
+    String[] graph =
+    {
+      "[1,0,[]]", "[2,0,[]]", "[3,0,[]]", "[4,0,[]]", "[5,0,[]]",
+      "[6,0,[]]", "[7,0,[]]", "[8,0,[]]", "[9,0,[]]", "[10,0,[]]"
+    };
+    String[] expected =
+    {
+      "1\t0", "2\t0", "3\t0", "4\t0", "5\t0",
+      "6\t0", "7\t0", "8\t0", "9\t0", "10\t0"
+    };
+
+    USE_OUT_OF_CORE_GRAPH.set(conf, true);
+    MAX_PARTITIONS_IN_MEMORY.set(conf, 1);
+    USER_PARTITION_COUNT.set(conf, 10);
+
+    File directory = Files.createTempDir();
+    PARTITIONS_DIRECTORY.set(conf,
+      new File(directory, "giraph_partitions").toString());
+
+    conf.setComputationClass(EmptyComputation.class);
+    conf.setVertexInputFormatClass(JsonLongDoubleFloatDoubleVertexInputFormat.class);
+    conf.setVertexOutputFormatClass(IdWithValueTextOutputFormat.class);
+
+    results = InternalVertexRunner.run(conf, graph);
+    checkResults(results, expected);
     FileUtils.deleteDirectory(directory);
   }
 
@@ -237,6 +330,47 @@ public class TestPartitionStores {
     partitionStore.putPartition(partition);
     partitionStore.deletePartition(2);
     assertEquals(2, partitionStore.getNumPartitions());
+  }
+
+  /**
+   * Internal checker to verify the correctness of the tests.
+   * @param results   the actual results obtaind
+   * @param expected  expected results
+   */
+  private void checkResults(Iterable<String> results, String[] expected) {
+    Iterator<String> result = results.iterator();
+
+    assert results != null;
+
+    while(result.hasNext()) {
+      String  resultStr = result.next();
+      boolean found = false;
+
+      for (int j = 0; j < expected.length; ++j) {
+        if (expected[j].equals(resultStr)) {
+          found = true;
+        }
+      }
+
+      assert found;
+    }
+  }
+
+  /**
+   * Test compute method that sends each edge a notification of its parents.
+   * The test set only has a 1-1 parent-to-child ratio for this unit test.
+   */
+  public static class EmptyComputation
+    extends BasicComputation<LongWritable, DoubleWritable, FloatWritable,
+      LongWritable> {
+
+    @Override
+    public void compute(
+      Vertex<LongWritable, DoubleWritable,FloatWritable> vertex,
+      Iterable<LongWritable> messages) throws IOException {
+
+      vertex.voteToHalt();
+    }
   }
   
   @Test

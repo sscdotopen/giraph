@@ -34,8 +34,10 @@ import org.apache.giraph.metrics.GiraphTimer;
 import org.apache.giraph.metrics.GiraphTimerContext;
 import org.apache.giraph.metrics.ResetSuperstepMetricsObserver;
 import org.apache.giraph.metrics.SuperstepMetricsRegistry;
+import org.apache.giraph.partition.Partition;
 import org.apache.giraph.partition.PartitionOwner;
 import org.apache.giraph.partition.PartitionStats;
+import org.apache.giraph.partition.PartitionStore;
 import org.apache.giraph.time.SystemTime;
 import org.apache.giraph.time.Time;
 import org.apache.giraph.utils.CallableFactory;
@@ -45,6 +47,7 @@ import org.apache.giraph.worker.BspServiceWorker;
 import org.apache.giraph.worker.InputSplitsCallable;
 import org.apache.giraph.worker.WorkerContext;
 import org.apache.giraph.worker.WorkerObserver;
+import org.apache.giraph.worker.WorkerProgress;
 import org.apache.giraph.zk.ZooKeeperManager;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -172,6 +175,19 @@ public class GraphTaskManager<I extends WritableComparable, V extends Writable,
   }
 
   /**
+   * In order for job client to know which ZooKeeper the job is using,
+   * we create a counter with server:port as its name inside of
+   * ZOOKEEPER_SERVER_PORT_COUNTER_GROUP.
+   *
+   * @param serverPortList Server:port list for ZooKeeper used
+   */
+  private void createZooKeeperCounter(String serverPortList) {
+    // Getting the counter will actually create it.
+    context.getCounter(GiraphConstants.ZOOKEEPER_SERVER_PORT_COUNTER_GROUP,
+        serverPortList);
+  }
+
+  /**
    * Called by owner of this GraphTaskManager on each compute node
    *
    * @param zkPathList the path to the ZK jars we need to run the job
@@ -199,8 +215,12 @@ public class GraphTaskManager<I extends WritableComparable, V extends Writable,
     context.setStatus("setup: Initializing Zookeeper services.");
     locateZookeeperClasspath(zkPathList);
     String serverPortList = conf.getZookeeperList();
-    if (serverPortList == null && startZooKeeperManager()) {
-      return; // ZK connect/startup failed
+    if (serverPortList.isEmpty()) {
+      if (startZooKeeperManager()) {
+        return; // ZK connect/startup failed
+      }
+    } else {
+      createZooKeeperCounter(serverPortList);
     }
     if (zkManager != null && zkManager.runsZooKeeper()) {
       if (LOG.isInfoEnabled()) {
@@ -215,9 +235,8 @@ public class GraphTaskManager<I extends WritableComparable, V extends Writable,
       Thread.sleep(GiraphConstants.DEFAULT_ZOOKEEPER_INIT_LIMIT *
         GiraphConstants.DEFAULT_ZOOKEEPER_TICK_TIME);
     }
-    int sessionMsecTimeout = conf.getZooKeeperSessionTimeout();
     try {
-      instantiateBspService(sessionMsecTimeout);
+      instantiateBspService();
     } catch (IOException e) {
       LOG.error("setup: Caught exception just before end of setup", e);
       if (zkManager != null) {
@@ -369,8 +388,7 @@ public class GraphTaskManager<I extends WritableComparable, V extends Writable,
     zkManager.onlineZooKeeperServers();
     String serverPortList = zkManager.getZooKeeperServerPortString();
     conf.setZookeeperList(serverPortList);
-    context.getCounter(GiraphConstants.ZOOKEEPER_SERVER_PORT_COUNTER_GROUP,
-        serverPortList);
+    createZooKeeperCounter(serverPortList);
     return false;
   }
 
@@ -394,8 +412,12 @@ public class GraphTaskManager<I extends WritableComparable, V extends Writable,
   private FinishedSuperstepStats completeSuperstepAndCollectStats(
     List<PartitionStats> partitionStatsList,
     GiraphTimerContext superstepTimerContext) {
-    finishedSuperstepStats = serviceWorker.finishSuperstep(partitionStatsList);
-    superstepTimerContext.stop();
+
+    // the superstep timer is stopped inside the finishSuperstep function
+    // (otherwise metrics are not available at the end of the computation
+    //  using giraph.metrics.enable=true).
+    finishedSuperstepStats =
+      serviceWorker.finishSuperstep(partitionStatsList, superstepTimerContext);
     if (conf.metricsEnabled()) {
       GiraphMetrics.get().perSuperstep().printSummary(System.err);
     }
@@ -537,17 +559,15 @@ public class GraphTaskManager<I extends WritableComparable, V extends Writable,
   /**
    * Instantiate the appropriate BspService object (Master or Worker)
    * for this compute node.
-   * @param sessionMsecTimeout configurable session timeout
    */
-  private void instantiateBspService(int sessionMsecTimeout)
+  private void instantiateBspService()
     throws IOException, InterruptedException {
     if (graphFunctions.isMaster()) {
       if (LOG.isInfoEnabled()) {
         LOG.info("setup: Starting up BspServiceMaster " +
           "(master thread)...");
       }
-      serviceMaster = new BspServiceMaster<I, V, E>(
-        sessionMsecTimeout, context, this);
+      serviceMaster = new BspServiceMaster<I, V, E>(context, this);
       masterThread = new MasterThread<I, V, E>(serviceMaster, context);
       masterThread.start();
     }
@@ -555,8 +575,7 @@ public class GraphTaskManager<I extends WritableComparable, V extends Writable,
       if (LOG.isInfoEnabled()) {
         LOG.info("setup: Starting up BspServiceWorker...");
       }
-      serviceWorker = new BspServiceWorker<I, V, E>(
-        sessionMsecTimeout, context, this);
+      serviceWorker = new BspServiceWorker<I, V, E>(context, this);
       if (LOG.isInfoEnabled()) {
         LOG.info("setup: Registering health of this worker...");
       }
@@ -711,10 +730,20 @@ public class GraphTaskManager<I extends WritableComparable, V extends Writable,
       int numThreads) {
     final BlockingQueue<Integer> computePartitionIdQueue =
       new ArrayBlockingQueue<Integer>(numPartitions);
-    for (Integer partitionId :
-      serviceWorker.getPartitionStore().getPartitionIds()) {
+    long verticesToCompute = 0;
+    PartitionStore<I, V, E> partitionStore = serviceWorker.getPartitionStore();
+    for (Integer partitionId : partitionStore.getPartitionIds()) {
       computePartitionIdQueue.add(partitionId);
+
+      Partition<I, V, E> partition =
+        partitionStore.getOrCreatePartition(partitionId);
+      verticesToCompute += partition.getVertexCount();
+      partitionStore.putPartition(partition);
     }
+    WorkerProgress.get().startSuperstep(
+        serviceWorker.getSuperstep(),
+        verticesToCompute,
+        serviceWorker.getPartitionStore().getNumPartitions());
 
     GiraphTimerContext computeAllTimerContext = computeAll.time();
     timeToFirstMessageTimerContext = timeToFirstMessage.time();

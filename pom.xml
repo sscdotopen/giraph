@@ -21,6 +21,13 @@ under the License.
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.apache</groupId>
+    <artifactId>apache</artifactId>
+    <version>13</version>
+  </parent>
+
   <groupId>org.apache.giraph</groupId>
   <artifactId>giraph-parent</artifactId>
   <packaging>pom</packaging>
@@ -261,6 +268,7 @@ under the License.
 
     <dep.avro.version>1.3.3</dep.avro.version>
     <dep.accumulo.version>1.4.0</dep.accumulo.version>
+    <dep.asm.version>3.2</dep.asm.version>
     <dep.gora.version>0.3</dep.gora.version>
     <dep.airline.version>0.5</dep.airline.version>
     <dep.base64.version>2.3.8</dep.base64.version>
@@ -271,17 +279,20 @@ under the License.
     <dep.commons-collections.version>3.2.1</dep.commons-collections.version>
     <dep.commons-configuration.version>1.6</dep.commons-configuration.version>
     <dep.commons-httpclient.version>3.0.1</dep.commons-httpclient.version>
-    <dep.commons-logging.version>1.0.4</dep.commons-logging.version>
+    <dep.commons-logging.version>1.1.1</dep.commons-logging.version>
     <dep.commons-io.version>2.1</dep.commons-io.version>
     <dep.commons-net.version>3.1</dep.commons-net.version>
     <dep.fasterxml-jackson.version>2.1.2</dep.fasterxml-jackson.version>
     <dep.fastutil.version>6.5.4</dep.fastutil.version>
     <dep.google.findbugs.version>2.0.2</dep.google.findbugs.version>
     <dep.guava.version>14.0.1</dep.guava.version>
-    <dep.hbase.version>0.90.5</dep.hbase.version>
+    <dep.hbase.version>0.94.16</dep.hbase.version>
     <dep.hcatalog.version>0.5.0-incubating</dep.hcatalog.version>
     <dep.hive.version>0.11.0</dep.hive.version>
     <dep.hiveio.version>0.21</dep.hiveio.version>
+    <dep.jaxb-impl.version>2.2.4-1</dep.jaxb-impl.version>
+    <dep.jersey.version>1.17</dep.jersey.version>
+    <dep.jetty.version>6.1.26</dep.jetty.version>
     <dep.json.version>20090211</dep.json.version>
     <dep.junit.version>4.11</dep.junit.version>
     <dep.jython.version>2.5.3</dep.jython.version>
@@ -289,14 +300,16 @@ under the License.
     <dep.log4j.version>1.2.17</dep.log4j.version>
     <dep.mockito.version>1.9.5</dep.mockito.version>
     <dep.netty.version>3.5.3.Final</dep.netty.version>
+    <dep.paranamer.version>2.3</dep.paranamer.version>
     <dep.slf4j.version>1.7.5</dep.slf4j.version>
-    <dep.tinkerpop.rexter.version>2.3.0</dep.tinkerpop.rexter.version>
+    <dep.tinkerpop.rexter.version>2.4.0</dep.tinkerpop.rexter.version>
     <dep.typetools.version>0.2.1</dep.typetools.version>
     <dep.yammer-metrics.version>2.2.0</dep.yammer-metrics.version>
     <dep.yourkit-api.version>9.5.6</dep.yourkit-api.version>
-    <dep.zookeeper.version>3.3.3</dep.zookeeper.version>
+    <dep.zookeeper.version>3.4.5</dep.zookeeper.version>
 
     <forHadoop>for-hadoop-${hadoop.version}</forHadoop>
+    <munge.symbols>NO_MUNGE_SYMBOLS</munge.symbols>
   </properties>
 
   <build>
@@ -324,7 +337,7 @@ under the License.
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-dependency-plugin</artifactId>
-          <version>2.7</version>
+          <version>2.8</version>
           <configuration>
             <skip>${giraph.maven.dependency.plugin.skip}</skip>
             <failOnWarning>true</failOnWarning>
@@ -429,6 +442,18 @@ under the License.
               <dependency>
                 <groupId>org.apache.hive</groupId>
                 <artifactId>hive-exec</artifactId>
+              </dependency>
+              <dependency>
+                <groupId>stax</groupId>
+                <artifactId>stax-api</artifactId>
+              </dependency>
+              <dependency>
+                <groupId>asm</groupId>
+                <artifactId>asm</artifactId>
+              </dependency>
+              <dependency>
+                <groupId>com.sun.jersey</groupId>
+                <artifactId>jersey-core</artifactId>
               </dependency>
             </ignoredDependencies>
             <ignoredResources>
@@ -823,9 +848,6 @@ under the License.
         <module>giraph-gora</module>
         <module>giraph-rexster</module>
       </modules>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
       <properties>
         <hadoop.version>0.20.203.0</hadoop.version>
         <munge.symbols>HADOOP_NON_JOBCONTEXT_IS_INTERFACE,HADOOP_1_SECURITY,HADOOP_1_SECRET_MANAGER</munge.symbols>
@@ -868,17 +890,25 @@ under the License.
     </profile>
 
     <profile>
-      <id>hadoop_1.0</id>
+      <id>hadoop_1</id>
       <modules>
         <module>giraph-accumulo</module>
         <module>giraph-hbase</module>
         <module>giraph-hcatalog</module>
         <module>giraph-hive</module>
+        <module>giraph-gora</module>
         <module>giraph-rexster</module>
       </modules>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
       <properties>
+<<<<<<< HEAD
         <hadoop.version>1.0.2</hadoop.version>
         <dep.commons-logging.version>1.1.1</dep.commons-logging.version>
+=======
+        <hadoop.version>1.2.1</hadoop.version>
+>>>>>>> trunk-ooc
         <munge.symbols>HADOOP_NON_JOBCONTEXT_IS_INTERFACE,HADOOP_1_SECURITY,HADOOP_1_SECRET_MANAGER</munge.symbols>
       </properties>
       <dependencies>
@@ -893,10 +923,6 @@ under the License.
           <version>${hadoop.version}</version>
           <scope>provided</scope>
           <exclusions>
-            <exclusion>
-              <groupId>commons-httpclient</groupId>
-              <artifactId>commons-httpclient</artifactId>
-            </exclusion>
             <exclusion>
               <groupId>org.eclipse.jdt</groupId>
               <artifactId>core</artifactId>
@@ -954,10 +980,8 @@ under the License.
       <id>hadoop_facebook</id>
       <modules>
         <module>giraph-accumulo</module>
-        <module>giraph-hbase</module>
         <module>giraph-hcatalog</module>
         <module>giraph-hive</module>
-        <module>giraph-rexster</module>
       </modules>
       <properties>
         <hadoop.version>0.20.0</hadoop.version>
@@ -1174,7 +1198,15 @@ under the License.
      </profile>
 
     <profile>
-       <id>2.2.0</id>
+       <id>hadoop_2</id>
+      <modules>
+        <module>giraph-accumulo</module>
+        <module>giraph-hbase</module>
+        <module>giraph-hcatalog</module>
+        <module>giraph-hive</module>
+        <module>giraph-gora</module>
+        <module>giraph-rexster</module>
+      </modules>
        <properties>
          <hadoop.version>2.2.0</hadoop.version>
          <!-- TODO: add these checks eventually -->
@@ -1254,6 +1286,11 @@ under the License.
     <dependencies>
       <!-- compile dependencies. sorted lexicographically. -->
       <dependency>
+        <groupId>asm</groupId>
+        <artifactId>asm</artifactId>
+        <version>${dep.asm.version}</version>
+      </dependency>
+      <dependency>
         <groupId>com.facebook.hiveio</groupId>
         <artifactId>hive-io-exp-core</artifactId>
         <version>${dep.hiveio.version}</version>
@@ -1319,6 +1356,42 @@ under the License.
         <groupId>com.tinkerpop.blueprints</groupId>
         <artifactId>blueprints-core</artifactId>
         <version>${dep.tinkerpop.rexter.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>com.tinkerpop.blueprints</groupId>
+        <artifactId>blueprints-orient-graph</artifactId>
+        <version>${dep.tinkerpop.rexter.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>com.tinkerpop.blueprints</groupId>
+        <artifactId>blueprints-neo4j-graph</artifactId>
+        <version>${dep.tinkerpop.rexter.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>io.netty</groupId>
+            <artifactId>netty</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>com.tinkerpop.rexster</groupId>
@@ -1345,8 +1418,20 @@ under the License.
             <artifactId>commons-logging</artifactId>
           </exclusion>
           <exclusion>
+            <groupId>com.tinkerpop.gremlin</groupId>
+            <artifactId>gremlin-groovy</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.ant</groupId>
+            <artifactId>ant</artifactId>
+          </exclusion>
+          <exclusion>
             <groupId>org.glassfish.grizzly</groupId>
             <artifactId>grizzly-framework</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-core-asl</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
@@ -1356,8 +1441,28 @@ under the License.
         <version>${dep.tinkerpop.rexter.version}</version>
         <exclusions>
           <exclusion>
+            <groupId>asm</groupId>
+            <artifactId>asm</artifactId>
+          </exclusion>
+          <exclusion>
             <groupId>commons-logging</groupId>
             <artifactId>commons-logging</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.tinkerpop.gremlin</groupId>
+            <artifactId>gremlin-groovy</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-core-asl</artifactId>
           </exclusion>
           <exclusion>
             <groupId>org.glassfish.grizzly</groupId>
@@ -1465,7 +1570,17 @@ under the License.
       </dependency>
       <dependency>
         <groupId>org.apache.giraph</groupId>
-        <artifactId>giraph-rexster</artifactId>
+        <artifactId>giraph-rexster-io</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.giraph</groupId>
+        <artifactId>giraph-kibble</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.giraph</groupId>
+        <artifactId>giraph-gora</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -1609,6 +1724,10 @@ under the License.
             <artifactId>jmxtools</artifactId>
           </exclusion>
           <exclusion>
+            <groupId>org.jboss.netty</groupId>
+            <artifactId>netty</artifactId>
+          </exclusion>
+          <exclusion>
             <groupId>javax.jms</groupId>
             <artifactId>jms</artifactId>
           </exclusion>
@@ -1634,6 +1753,26 @@ under the License.
         <version>${dep.typetools.version}</version>
       </dependency>
       <dependency>
+        <groupId>com.sun.xml.bind</groupId>
+        <artifactId>jaxb-impl</artifactId>
+        <version>${dep.jaxb-impl.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.sun.jersey</groupId>
+        <artifactId>jersey-core</artifactId>
+        <version>${dep.jersey.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.sun.jersey</groupId>
+        <artifactId>jersey-json</artifactId>
+        <version>${dep.jersey.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.mortbay.jetty</groupId>
+        <artifactId>jetty</artifactId>
+        <version>${dep.jetty.version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.json</groupId>
         <artifactId>json</artifactId>
         <version>${dep.json.version}</version>
@@ -1642,6 +1781,11 @@ under the License.
         <groupId>org.python</groupId>
         <artifactId>jython</artifactId>
         <version>${dep.jython.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.thoughtworks.paranamer</groupId>
+        <artifactId>paranamer</artifactId>
+        <version>${dep.paranamer.version}</version>
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>

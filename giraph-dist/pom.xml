@@ -79,10 +79,6 @@
     </dependency>
     <dependency>
       <groupId>org.apache.giraph</groupId>
-      <artifactId>giraph-rexster</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.giraph</groupId>
       <artifactId>giraph-hcatalog</artifactId>
     </dependency>
     <dependency>
@@ -92,6 +88,24 @@
     <dependency>
       <groupId>org.apache.giraph</groupId>
       <artifactId>giraph-examples</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.giraph</groupId>
+      <artifactId>giraph-gora</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.giraph</groupId>
+      <artifactId>giraph-kibble</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>javax.servlet</groupId>
+          <artifactId>javax.servlet-api</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.giraph</groupId>
+      <artifactId>giraph-rexster-io</artifactId>
     </dependency>
   </dependencies>
 </project>

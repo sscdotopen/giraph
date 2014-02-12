@@ -625,7 +625,7 @@ public class GiraphConfiguration extends Configuration
    *        (i.e. zk1:2221,zk2:2221)
    */
   public final void setZooKeeperConfiguration(String serverList) {
-    set(ZOOKEEPER_LIST, serverList);
+    ZOOKEEPER_LIST.set(this, serverList);
   }
 
   /**
@@ -728,7 +728,7 @@ public class GiraphConfiguration extends Configuration
    * @return ZooKeeper list of strings, comma separated or null if none set.
    */
   public String getZookeeperList() {
-    return get(ZOOKEEPER_LIST);
+    return ZOOKEEPER_LIST.get(this);
   }
 
   /**
@@ -739,7 +739,7 @@ public class GiraphConfiguration extends Configuration
    * @param zkList list of strings, comma separated of zookeeper servers
    */
   public void setZookeeperList(String zkList) {
-    set(ZOOKEEPER_LIST, zkList);
+    ZOOKEEPER_LIST.set(this, zkList);
     ZOOKEEPER_IS_EXTERNAL.set(this, false);
   }
 
@@ -1176,5 +1176,34 @@ public class GiraphConfiguration extends Configuration
    */
   public void setCreateSourceVertex(boolean createVertex) {
     CREATE_EDGE_SOURCE_VERTICES.set(this, createVertex);
+  }
+
+  /**
+   * Get the maximum timeout (in milliseconds) for waiting for all tasks
+   * to complete after the job is done.
+   *
+   * @return Wait task done timeout in milliseconds.
+   */
+  public int getWaitTaskDoneTimeoutMs() {
+    return WAIT_TASK_DONE_TIMEOUT_MS.get(this);
+  }
+
+  /**
+   * Set the maximum timeout (in milliseconds) for waiting for all tasks
+   * to complete after the job is done.
+   *
+   * @param ms Milliseconds to set
+   */
+  public void setWaitTaskDoneTimeoutMs(int ms) {
+    WAIT_TASK_DONE_TIMEOUT_MS.set(this, ms);
+  }
+
+  /**
+   * Check whether to track job progress on client or not
+   *
+   * @return True if job progress should be tracked on client
+   */
+  public boolean trackJobProgressOnClient() {
+    return TRACK_JOB_PROGRESS_ON_CLIENT.get(this);
   }
 }

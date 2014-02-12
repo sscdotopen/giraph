@@ -408,7 +408,12 @@ public interface GiraphConstants {
    *  zookeeper, this parameter will updated the configuration with the corrent
    *  configuration value.
    */
-  String ZOOKEEPER_LIST = "giraph.zkList";
+  StrConfOption ZOOKEEPER_LIST =
+      new StrConfOption("giraph.zkList", "",
+          "ZooKeeper comma-separated list (if not set, will start up " +
+          "ZooKeeper locally). Consider that after locally-starting " +
+          "zookeeper, this parameter will updated the configuration with " +
+          "the corrent configuration value.");
 
   /**
    * Zookeeper List will always hold a value during the computation while
@@ -862,6 +867,11 @@ public interface GiraphConstants {
       new IntConfOption("giraph.maxPartitionsInMemory", 10,
           "Maximum number of partitions to hold in memory for each worker.");
 
+  /** Set number of sticky partitions if sticky mode is enabled.  */
+  IntConfOption MAX_STICKY_PARTITIONS =
+      new IntConfOption("giraph.stickyPartitions", 0,
+          "Set number of sticky partitions if sticky mode is enabled.");
+
   /** Keep the zookeeper output for debugging? Default is to remove it. */
   BooleanConfOption KEEP_ZOOKEEPER_DATA =
       new BooleanConfOption("giraph.keepZooKeeperData", false,
@@ -991,6 +1001,12 @@ public interface GiraphConstants {
   String ZOOKEEPER_HALT_NODE_COUNTER_GROUP = "Zookeeper halt node";
 
   /**
+   * This counter group will contain one counter whose name is the ZooKeeper
+   * node path which contains all data about this job
+   */
+  String ZOOKEEPER_BASE_PATH_COUNTER_GROUP = "Zookeeper base path";
+
+  /**
    * Which class to use to write instructions on how to halt the application
    */
   ClassConfOption<HaltApplicationUtils.HaltInstructionsWriter>
@@ -999,5 +1015,19 @@ public interface GiraphConstants {
       HaltApplicationUtils.DefaultHaltInstructionsWriter.class,
       HaltApplicationUtils.HaltInstructionsWriter.class,
       "Class used to write instructions on how to halt the application");
+
+  /**
+   * Maximum timeout (in milliseconds) for waiting for all tasks
+   * to complete after the job is done.  Defaults to 15 minutes.
+   */
+  IntConfOption WAIT_TASK_DONE_TIMEOUT_MS =
+      new IntConfOption("giraph.waitTaskDoneTimeoutMs", MINUTES.toMillis(15),
+          "Maximum timeout (in ms) for waiting for all all tasks to " +
+              "complete");
+
+  /** Whether to track job progress on client or not */
+  BooleanConfOption TRACK_JOB_PROGRESS_ON_CLIENT =
+      new BooleanConfOption("giraph.trackJobProgressOnClient", true,
+          "Whether to track job progress on client or not");
 }
 // CHECKSTYLE: resume InterfaceIsTypeCheck

@@ -18,7 +18,6 @@
 
 package org.apache.giraph.examples.hyperball;
 
-import org.apache.giraph.comm.messages.HyperLogLog;
 import org.junit.Test;
 
 import java.util.BitSet;

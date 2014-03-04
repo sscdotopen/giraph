@@ -18,7 +18,6 @@
 
 package org.apache.giraph.examples.hyperball;
 
-import org.apache.giraph.comm.messages.HyperLogLog;
 import org.apache.giraph.graph.BasicComputation;
 import org.apache.giraph.graph.Vertex;
 import org.apache.hadoop.io.LongWritable;

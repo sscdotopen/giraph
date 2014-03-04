@@ -16,10 +16,9 @@
  * limitations under the License.
  */
 
-package org.apache.giraph.comm.messages;
+package org.apache.giraph.examples.hyperball;
 
 import org.apache.giraph.combiner.MessageCombiner;
-import org.apache.giraph.comm.messages.HyperLogLog;
 import org.apache.hadoop.io.LongWritable;
 
 public class HyperLogLogCombiner

@@ -18,7 +18,6 @@
 
 package org.apache.giraph.examples.hyperball;
 
-import org.apache.giraph.comm.messages.HyperLogLogCombiner;
 import org.apache.giraph.conf.GiraphConfiguration;
 import org.apache.giraph.edge.ByteArrayEdges;
 

@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.giraph.comm.messages;
+package org.apache.giraph.examples.hyperball;
 
 import java.io.DataInput;
 import java.io.DataOutput;

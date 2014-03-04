@@ -14,7 +14,7 @@
  * the License.
  */
 
-package org.apache.giraph.comm.messages;
+package org.apache.giraph.examples.hyperball;
 
 final class MurmurHash3 {
 
